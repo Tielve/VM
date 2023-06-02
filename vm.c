@@ -16,26 +16,13 @@ typedef struct {
     unsigned int M;
 } instruction;
 
-typedef struct 
-{
-    char op[3];
-} opCodes;
-
-opCodes code[22] = {
-"LIT", "OPR", "RTN", "ADD",
-"SUB", "MUL", "DIV", "EQL", 
-"NEQ", "LSS", "LEQ", "GTR", 
-"GEQ", "LOD", "STO", "CAL", 
-"INC", "JMP", "JPC", "SIN",
-"SOU", "EOP"};
-
 int pc = 0;
-int sp = 0;
 int bp = 0;
-int pas[ARRAY_SIZE];
+int sp = 0;
 int EOP = 1;
-instruction ir;
+int pas[ARRAY_SIZE];
 int ar[ARRAY_SIZE];
+instruction ir;
 
 void main(int argc, char *argv[])
 {
@@ -43,7 +30,7 @@ void main(int argc, char *argv[])
     for(int i = 0; i < ARRAY_SIZE; i++)
     {
         pas[i] = 0;
-        ar[i] = 0;
+        ar[i] = NULL;
     }
 
     //Read in all the instructions from the input file
@@ -75,6 +62,7 @@ void main(int argc, char *argv[])
             case 1: //LIT
                 sp = sp + 1;
                 pas[sp] = ir.M;
+                ar[sp] = ir.M;
                 break;
             case 2: //OPR
                 switch(ir.M)
@@ -121,7 +109,7 @@ void main(int argc, char *argv[])
                         sp = sp - 1;
                         break;
                     case 10: //GEQ >=
-                        pas[sp - 1] = (pas[sp - 1]>=pas[sp]);
+                        pas[sp - 1] = (pas[sp - 1] >= pas[sp]);
                         sp = sp - 1;
                         break;
                 }
@@ -132,17 +120,21 @@ void main(int argc, char *argv[])
                 ar[sp] = pas[base(bp, ir.L) + ir.M];
                 break;
             case 4: //STO
-                pas[base(bp, ir.L) + ir.M] = pas[sp];
+                //pas[base(bp, ir.L) + ir.M] = pas[sp];
                 ar[base(bp, ir.L) + ir.M] = pas[sp];
                 sp = sp - 1;
                 break;
             case 5: //CAL
-                pas[sp + 1] = base(bp, ir.L);
-                pas[sp + 2] = bp;
-                pas[sp + 3] = pc;
-                ar[sp + 1] = base(bp, ir.L);
-                ar[sp + 2] = bp;
-                ar[sp + 3] = pc;
+                pas[sp + 1] = base(bp, ir.L); //Static Link
+                pas[sp + 2] = bp;   //Dynamic Link
+                pas[sp + 3] = pc;   //Return Address
+                
+                //Save SL, DL, and RA values for Activation Record
+                ar[sp + 1] = -1;
+                ar[sp + 2] = base(bp, ir.L);    
+                ar[sp + 3] = bp;
+                ar[sp + 4] = pc;
+
                 bp = sp + 1;
                 pc = ir.M;
                 break;
@@ -183,14 +175,17 @@ void main(int argc, char *argv[])
                 EOP = 0;
                 break;
         }
-        printf("%d %d %d \t%d %d %d \t", ir.OP, ir.L, ir.M, pc, bp, sp);
-        for(int i = 0; i < sp + 1; i++)
+        printf("%d %d %d \t\t%d %d %d    ", ir.OP, ir.L, ir.M, pc, bp, sp);
+        for(int i = 0; i <= sp; i++)
         {
-            printf("%d ", ar[i]);
+            if(ar[i] == -1)
+                printf("| ");
+            else
+                printf("%d ", ar[i]);
         }
         printf("\n");
     }
-    return 0;
+    return;
 }
 
 int base( int BP, int L)
