@@ -30,7 +30,6 @@ void main(int argc, char *argv[])
     for(int i = 0; i < ARRAY_SIZE; i++)
     {
         pas[i] = 0;
-        ar[i] = NULL;
     }
 
     //Read in all the instructions from the input file
@@ -43,9 +42,13 @@ void main(int argc, char *argv[])
 
     //Initialize BP, SP and PC
     //with their respective values based on size of input
+    int arCounter = 0;
     bp = pc;
     sp = bp - 1;
     pc = 0;
+    ir.OP = 0;
+    ir.L = 0;
+    ir.M = 0;
 
     //Print BP, SP and PC values
     printf("                PC  BP  SP  Stack\n");
@@ -63,6 +66,7 @@ void main(int argc, char *argv[])
                 sp = sp + 1;
                 pas[sp] = ir.M;
                 ar[sp] = ir.M;
+                arCounter++;
                 break;
             case 2: //OPR
                 switch(ir.M)
@@ -118,10 +122,12 @@ void main(int argc, char *argv[])
                 sp = sp + 1;
                 pas[sp] = pas[base(bp, ir.L) + ir.M];
                 ar[sp] = pas[base(bp, ir.L) + ir.M];
+                arCounter++;
                 break;
             case 4: //STO
-                //pas[base(bp, ir.L) + ir.M] = pas[sp];
+                pas[base(bp, ir.L) + ir.M] = pas[sp];
                 ar[base(bp, ir.L) + ir.M] = pas[sp];
+                arCounter++;
                 sp = sp - 1;
                 break;
             case 5: //CAL
@@ -134,6 +140,7 @@ void main(int argc, char *argv[])
                 ar[sp + 2] = base(bp, ir.L);    
                 ar[sp + 3] = bp;
                 ar[sp + 4] = pc;
+                arCounter += 4;
 
                 bp = sp + 1;
                 pc = ir.M;
@@ -165,6 +172,7 @@ void main(int argc, char *argv[])
                         scanf("%d", &num);
                         pas[sp] = num;
                         ar[sp] = num;
+                        arCounter++;                       
                         break;
                     case 3: //Halt
                         EOP = 0;
@@ -176,7 +184,7 @@ void main(int argc, char *argv[])
                 break;
         }
         printf("%d %d %d \t\t%d %d %d    ", ir.OP, ir.L, ir.M, pc, bp, sp);
-        for(int i = 0; i <= sp; i++)
+        for(int i = sp - arCounter; i <= sp; i++)
         {
             if(ar[i] == -1)
                 printf("| ");
