@@ -33,7 +33,7 @@ void main(int argc, char *argv[])
     }
 
     //Read in all the instructions from the input file
-    FILE *input = fopen("input.txt", "r");
+    FILE *input = fopen(argv[1], "r");
     while(fscanf(input, "%d %d %d", &pas[pc], &pas[pc+1], &pas[pc+2]) == 3)
     {
         pc = pc + 3;
